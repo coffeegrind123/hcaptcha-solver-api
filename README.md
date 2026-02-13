@@ -1,5 +1,8 @@
 # hCaptcha Solver API
 
+<img width="865" height="919" alt="image" src="https://github.com/user-attachments/assets/00342f6f-bd8b-410c-b55b-7dbcfa575e31" />
+
+
 A FastAPI backend that receives hCaptcha challenges, presents them to human solvers through a web interface, and returns solutions via API. Integrates with the [hcaptcha-click-solver](hcaptcha-click-solver/) library for browser automation.
 
 ## How It Works
