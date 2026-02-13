@@ -1,0 +1,3 @@
+[submodule "hcaptcha-click-solver"]
+	path = hcaptcha-click-solver
+	url = https://github.com/multibot-solver/hcaptcha-click-solver.git
