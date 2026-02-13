@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captcha Solver Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 {
+            font-size: 2em; font-weight: 600; margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .subtitle { color: #8b9dc3; font-size: 0.9em; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .status-bar {
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+            padding: 15px 25px; margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .status-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #4CAF50; box-shadow: 0 0 10px #4CAF50;
+            display: inline-block; margin-right: 8px; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .task-list { display: flex; flex-direction: column; gap: 12px; }
+        .task-card {
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+            padding: 20px; display: flex; justify-content: space-between; align-items: center;
+            transition: border-color 0.2s;
+        }
+        .task-card:hover { border-color: rgba(102,126,234,0.5); }
+        .task-info { flex: 1; }
+        .task-type {
+            display: inline-block; padding: 3px 10px; border-radius: 6px;
+            font-size: 0.8em; font-weight: 600; margin-bottom: 6px;
+        }
+        .type-Grid { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .type-Canvas { background: rgba(33,150,243,0.2); color: #2196F3; }
+        .type-Drag { background: rgba(255,152,0,0.2); color: #FF9800; }
+        .task-question { color: #ccc; font-size: 0.95em; margin-bottom: 4px; }
+        .task-age { color: #8b9dc3; font-size: 0.8em; }
+        .solve-btn {
+            padding: 10px 24px; background: #667eea; color: #fff; border: none;
+            border-radius: 8px; font-weight: 600; cursor: pointer;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .solve-btn:hover { background: #764ba2; transform: translateY(-2px); }
+        .empty {
+            text-align: center; padding: 60px 20px; color: #8b9dc3;
+            background: rgba(255,255,255,0.03); border-radius: 12px;
+            border: 1px dashed rgba(255,255,255,0.1);
+        }
+        .empty h2 { margin-bottom: 10px; color: #667eea; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Captcha Solver Dashboard</h1>
+        <p class="subtitle">Pending tasks waiting for human solvers</p>
+    </header>
+    <div class="container">
+        <div class="status-bar">
+            <div><span class="status-dot"></span> <span id="status-label">Listening for tasks</span></div>
+            <div style="color:#8b9dc3">Pending: <strong id="task-count">{{ tasks|length }}</strong></div>
+        </div>
+        <div class="task-list" id="task-list">
+            {% if tasks %}
+                {% for task in tasks %}
+                <div class="task-card" data-id="{{ task.task_id }}">
+                    <div class="task-info">
+                        <span class="task-type type-{{ task.request_type }}">{{ task.request_type }}</span>
+                        <div class="task-question">{{ task.question[:100] }}</div>
+                        <div class="task-age" data-created="{{ task.created_at }}"></div>
+                    </div>
+                    <a class="solve-btn" href="/solve/{{ task.task_id }}">Solve</a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">
+                    <h2>No pending tasks</h2>
+                    <p>Tasks will appear here when captcha challenges are submitted.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        function updateAges() {
+            document.querySelectorAll('.task-age[data-created]').forEach(el => {
+                const created = parseFloat(el.dataset.created);
+                const age = Math.floor(Date.now() / 1000 - created);
+                el.textContent = age + 's ago';
+            });
+        }
+        updateAges();
+        setInterval(updateAges, 1000);
+
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//${location.host}/ws/solver`);
+        ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            if (data.type === 'new_task') {
+                location.reload();
+            }
+        };
+        ws.onclose = () => { setTimeout(() => location.reload(), 3000); };
+    </script>
+</body>
+</html>
